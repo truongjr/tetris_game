@@ -1,5 +1,4 @@
 import sys
-# -*- coding: utf-8 -*-
 import time
 
 import pygame as pg
@@ -136,10 +135,76 @@ lv = [pg.image.load('level/easy.png'), pg.image.load('level/medium.png'), pg.ima
 def check_pos_in_circle(cir_pos, mouse_pos):
     return (mouse_pos[0] - cir_pos[0]) ** 2 + (mouse_pos[1] - cir_pos[1]) ** 2 <= cir_pos[2] ** 2
 
+class ToggleButton:
+
+    def __init__(self, x, y, w, h, choose, toggle_list, pos_option_list, pos_toggle):
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.circle_pos = (x + 50, y + 50, 50)
+        self.toggle_list = toggle_list
+        self.choose = choose
+        self.rect = pg.Rect(self.x - 10, self.y + self.choose.get_height() - 20, 180 + 30, 160)
+        self.draw_menu = False
+        self.menu_active = False
+        self.active_option = -1
+        self.pos_clicked = (x + 50, y + 50)
+        self.pos_clicked_temp = (0, 0)
+        self.pos_option_list = pos_option_list
+        self.pos_toggle = pos_toggle
+        self.on = pg.image.load('on.png')
+        self.off = pg.image.load('off.png')
+        self.adj = [True for i in range(len(self.toggle_list))]
+
+    def draw(self, surface):
+        surface.blit(self.choose, (self.x, self.y))
+        if self.draw_menu:
+            surface.blit(pg.transform.scale(pg.image.load('level/bg.png'), (180 + 30, 160)),
+                         (self.x, self.y + self.choose.get_height() - 20))
+            for i in range(len(self.toggle_list)):
+                text = pg.font.Font('pridib.ttf', 20).render(self.toggle_list[i] + ' : : ', True, (0, 0, 0))
+                surface.blit(text, self.pos_option_list[i])
+                if self.adj[i]:
+                    surface.blit(self.on, self.pos_toggle[i])
+                else:
+                    surface.blit(self.off, self.pos_toggle[i])
+
+    def update(self, list_event):
+        mouse_pos = pg.mouse.get_pos()
+        self.menu_active = check_pos_in_circle(self.circle_pos, mouse_pos)
+        self.active_option = -1
+        if self.rect.collidepoint(mouse_pos):
+            self.menu_active = True if check_pos_in_circle((self.x + 50, self.y + 50, 50) or (
+                        check_pos_in_circle((self.circle_pos[0], self.circle_pos[1], 50),
+                                            self.pos_clicked_temp) or self.rect.collidepoint(self.pos_clicked)),
+                                                           self.pos_clicked) else False
+            for i in range(len(self.toggle_list)):
+                temp = pg.Rect(self.pos_toggle[i] + (50, 50))
+                if temp.collidepoint(mouse_pos):
+                    self.active_option = i
+
+        if not self.menu_active and self.active_option == -1:
+            self.draw_menu = False
+
+        for event_item in list_event:
+            if event_item.type == pg.MOUSEBUTTONDOWN:
+                if self.draw_menu and self.active_option >= 0:
+                    self.draw_menu = False
+                    self.adj[self.active_option] = not self.adj[self.active_option]
+                    return self.adj
+                elif self.menu_active:
+                    self.draw_menu = not self.draw_menu
+            if event_item.type == pg.MOUSEBUTTONUP:
+                self.pos_clicked_temp = self.pos_clicked
+                self.pos_clicked = pg.mouse.get_pos()
+
+        return self.adj
+
 
 class OptionBox:
 
-    def __init__(self, x, y, w, h, choose, list_level, option_list, pos_option_list, selected=0):
+    def __init__(self, x, y, w, h, choose, list_level, option_list, pos_option_list = (), selected=0):
         self.x = x
         self.y = y
         self.w = w
@@ -153,8 +218,8 @@ class OptionBox:
         self.draw_menu = False
         self.menu_active = False
         self.active_option = -1
-        self.space = 180 // (len(self.option_list) + 1)
         self.pos_clicked = (x + 50, y + 50)
+        self.pos_option_list = pos_option_list
 
     def draw(self, surface):
         surface.blit(self.choose, (self.x, self.y))
@@ -162,8 +227,8 @@ class OptionBox:
             surface.blit(pg.transform.scale(pg.image.load('level/bg.png'), (180 + len(self.option_list) * 80, 160)),
                          (self.x, self.y + self.choose.get_height() - 20))
             for i, value in enumerate(self.option_list, 0):
-                surface.blit(value, (self.x + self.space + i * 80 + self.space * i, self.y + 120))
-                # print((140 + i * 100 + 30 * i, 220))
+                surface.blit(value, (self.pos_option_list[i]))
+                # print(self.x + self.space + i * 80 + self.space * i, self.y + 120)
 
     def update(self, list_event):
         mouse_pos = pg.mouse.get_pos()
@@ -172,7 +237,7 @@ class OptionBox:
         if self.rect.collidepoint(mouse_pos[0], mouse_pos[1]):
             self.menu_active = True if check_pos_in_circle((self.x + 50, self.y + 50, 50), self.pos_clicked) else False
             for i in range(len(self.option_list)):
-                if check_pos_in_circle((self.x + self.space + i * 80 + self.space * i + 40, self.y + 120 + 40, 40),
+                if check_pos_in_circle((self.pos_option_list[i][0] + 40, self.pos_option_list[i][1] + 40, 40),
                                        mouse_pos):
                     self.active_option = i
                     break
@@ -186,7 +251,7 @@ class OptionBox:
                     self.selected = self.active_option
                     self.draw_menu = False
                     self.choose = self.level_list[self.active_option]
-                    print(self.active_option)
+                    # print(self.active_option)
                     return self.active_option
                 if self.menu_active:
                     self.draw_menu = not self.draw_menu
@@ -207,14 +272,6 @@ def draw_grid():
                      (p_width + (s_width - p_width) // 2, s_height - p_height + i), 1)
 
 
-def get_pos(x, y, w, h):
-    mouse = pg.mouse.get_pos()
-    if x <= mouse[0] <= x + w and y <= mouse[1] <= y + h:
-        return True
-    else:
-        return False
-
-
 def draw_start_menu(surface):
     pg.draw.rect(surface, WHITE, (0, 0, s_width, s_height))
     font = pg.font.SysFont('comicsans', 130)
@@ -231,6 +288,7 @@ def draw_start_menu(surface):
     surface.blit(play_button, ((s_width - play_button.get_width()) // 2, 230))
     for i in range(4):
         surface.blit(button[i], (80 * (i + 1) + i * 100, 450))
+        # print((80 * (i + 1) + i * 100, 450))
 
 
 def draw_rank(surface, score_list):
@@ -281,7 +339,7 @@ def draw_information_game(surface):
     # surface.blit(ptit_logo, (10, 10))
     name_vi = pg.font.Font('pridib.ttf', 25).render('Học viện Công Nghệ Bưu Chính Viễn Thông'.upper(), True, BLACK)
     name_en = pg.font.Font('pridil.ttf', 20).render('Posts and Telecommunications Institute of Technology', True, RED)
-    name_project = pg.font.Font('pridil.ttf', 30).render('Đồ án:', True, BLACK)
+    name_project = pg.font.Font('pridil.ttf', 30).render('Đồ án :', True, BLACK)
     name_game = pg.font.Font('monoton.ttf', 80).render('GAME  TETRIS', True, BLACK)
     name_teacher = pg.font.Font('pridib.ttf', 20).render('Giảng viên hướng dẫn :', True, BLACK)
     name_info_teacher = pg.font.Font('pridil.ttf', 20).render('TS. Nguyễn Thị Tuyết Hải', True, BLACK)
@@ -344,13 +402,16 @@ def draw_info():
 
 if __name__ == '__main__':
     x = 0
-    yes = False
+    yes_level = False
+    yes_setting = False
     rank_list = [122333, 1232341, 5432344, 5623453, 3654234234]
     rank_list.sort(reverse=True)
     level_list = OptionBox(260, 450, 100, 100, pg.image.load('level/level.png'), lv,
                       (pg.image.load('level/easy1.png'), pg.image.load('level/medium1.png'),
-                       pg.image.load('level/hard1.png')))
-
+                       pg.image.load('level/hard1.png')), ((305, 570), (430, 570), (555, 570)))
+    setting_toggle = ToggleButton(80, 450, 100, 100, pg.image.load('setting.png'), ('âm lượng', 'nhạc nền'),
+                         ((100, 570), (100, 610)),
+                         ((225, 562), (225, 602)))
     while True:
         clock.tick(120)
         event_list = pg.event.get()
@@ -381,12 +442,20 @@ if __name__ == '__main__':
                     x = 1
                 elif check_pos_in_circle((300, 500, 50), pg.mouse.get_pos()):
                     if x == 0:
-                        yes = True
+                        yes_level = True
                     else:
-                        yes = not yes
+                        yes_level = not yes_level
+                elif check_pos_in_circle((130, 500, 50), pg.mouse.get_pos()):
+                    if x == 0:
+                        yes_setting = True
+                    else:
+                        yes_setting = not yes_setting
                 else:
                     x = 0
-        if yes and x == 0:
+        if yes_level and x == 0:
             selected_option = level_list.update(event_list)
             level_list.draw(screen)
+        if yes_setting and x == 0:
+            adj = setting_toggle.update(event_list)
+            setting_toggle.draw(screen)
         pg.display.flip()
