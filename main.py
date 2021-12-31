@@ -15,16 +15,10 @@ number_screen = 0
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 51, 51)
-LGRAY = (230, 230, 250)
+GRAY = (192, 192, 192)
 YELLOW = (255, 255, 0)
 BLUE = (0, 0, 255)
 LBLUE = (30, 144, 255)
-play_button_pos = ((s_width - 150) // 2 + 75, 230 + 75, 75)
-ranking_button_pos = (490, 500, 50)
-information_button_pos = (670, 500, 50)
-level_button_pos = (300, 500, 50)
-setting_button_pos = (130, 500, 50)
-button_pos = [play_button_pos, setting_button_pos, level_button_pos, ranking_button_pos, information_button_pos, ]
 
 S = [['.....',
       '.....',
@@ -129,13 +123,28 @@ T = [['.....',
       '.....']]
 
 shapes = [S, Z, I, O, J, L, T]
-shape_colors = [(255, 60, 60), (255, 150, 60), (255, 255, 50), (160, 255, 128), (0, 180, 255), (166, 120, 255),
-                (140, 220, 255), (255, 150, 220)]
-
+blocks_colors = ["block_colors/S.png", "block_colors/Z.png", "block_colors/I.png", "block_colors/O.png",
+                 "block_colors/J.png", "block_colors/L.png", "block_colors/T.png"]
+blocks = ["block/S.png", "block/Z.png", "block/I.png", "block/O.png", "block/J.png", "block/L.png", "block/T.png"]
+play_button_pos = ((s_width - 150) // 2 + 75, 230 + 75, 75)
+ranking_button_pos = (490, 500, 50)
+information_button_pos = (670, 500, 50)
+level_button_pos = (300, 500, 50)
+setting_button_pos = (130, 500, 50)
+button_pos = [play_button_pos, setting_button_pos, level_button_pos, ranking_button_pos, information_button_pos, ]
+button_pause = {(pg.image.load('pause/play.png'), pg.image.load('pause/play_effect.png')): False,
+                (pg.image.load('pause/sound.png'), pg.image.load('pause/sound_effect.png'),
+                 pg.image.load('pause/no_sound.png'), pg.image.load('pause/no_sound_effect.png')): False,
+                (pg.image.load('pause/home.png'), pg.image.load('pause/home_effect.png')): False}
+button_pause_pos = [(15 + 40, 90 + 40, 40), (110 + 40, 90 + 40, 40), (205 + 40, 90 + 40, 40)]
 pg.init()
 clock = pg.time.Clock()
 screen = pg.display.set_mode((s_width, s_height))
 pg.display.set_caption('T E T I S')
+pg.mixer.init()
+pg.mixer.music.load("nen.wav")
+pg.mixer.music.play(-1, 0.0)
+yes_volume = True
 
 
 def check_pos_in_circle(cir_pos, mouse_pos):
@@ -289,12 +298,12 @@ class Piece(object):
         self.x = column
         self.y = row
         self.shape = shape
-        self.color = shape_colors[shapes.index(shape)]
+        self.color = shapes.index(shape)
         self.rotation = 0
 
 
 def create_grid(locked_positions={}):
-    grid = [[(255, 255, 255) for x in range(10)] for x in range(20)]
+    grid = [[-1 for _ in range(10)] for _ in range(20)]
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):
@@ -321,8 +330,11 @@ def convert_shape_format(shape):
 
 
 def valid_space(shape, grid):
-    accepted_positions = [[(j, i) for j in range(10) if grid[i][j] == (255, 255, 255)] for i in range(20)]
-    accepted_positions = [j for sub in accepted_positions for j in sub]
+    accepted_positions = []
+    for i in range(20):
+        for j in range(10):
+            if grid[i][j] == -1:
+                accepted_positions.append((j, i))
     formatted = convert_shape_format(shape)
 
     for pos in formatted:
@@ -342,9 +354,8 @@ def check_lost(positions):
 
 
 def get_shape():
-    global shapes, shape_colors
-    # return Piece(5, 0, random.choice(shapes))
-    return Piece(5, 0, shapes[2])
+    global shapes
+    return Piece(5, 0, random.choice(shapes))
 
 
 def draw_text_middle(text, size, color, surface):
@@ -359,9 +370,9 @@ def draw_grid(surface, row, col):
     sx = top_left_x
     sy = top_left_y
     for i in range(row):
-        pg.draw.line(surface, (128, 128, 128), (sx, sy + i * 30), (sx + play_width, sy + i * 30))
+        pg.draw.line(surface, GRAY, (sx, sy + i * 30), (sx + play_width, sy + i * 30))
         for j in range(col):
-            pg.draw.line(surface, (128, 128, 128), (sx + j * 30, sy), (sx + j * 30, sy + play_height))
+            pg.draw.line(surface, GRAY, (sx + j * 30, sy), (sx + j * 30, sy + play_height))
 
 
 def clear_rows(grid, locked, score):
@@ -370,7 +381,7 @@ def clear_rows(grid, locked, score):
     for i in range(len(grid) - 1, -1, -1):
         row = grid[i]
         # Clear if there is no white pixels in the row
-        if (255, 255, 255) not in row:
+        if -1 not in row:
             inc += 1
             ind_delete_row.append(i)
             score[0] = score[0] + 10
@@ -391,39 +402,13 @@ def clear_rows(grid, locked, score):
     return ind_delete_row
 
 
-def draw_right_side(shape, surface, score):
-    # Preview Next Shape
-    font = pg.font.SysFont('comicsans', 30)
-
-    label = font.render('Next Shape', 1, (255, 255, 255))
-
-    sx = top_left_x + play_width
-    sy = s_height / 2
-    l = (s_width - play_width) / 2
-    x = sx + l / 2
-    x_line = sx + l / 2 - 2.5 * block_size
-    format = shape.shape[shape.rotation % len(shape.shape)]
-
-    for i, line in enumerate(format):
-        row = list(line)
-        for j, column in enumerate(row):
-            if column == '0':
-                pg.draw.rect(surface, shape.color,
-                             (x_line + j * block_size, sy + i * block_size, block_size, block_size), 0)
-    for i in range(6):
-        pg.draw.line(surface, (64, 64, 64), (x_line, sy + i * block_size),
-                     (x_line + 6 * block_size, sy + i * block_size))
-        for j in range(6):
-            pg.draw.line(surface, (64, 64, 64), (x_line + j * block_size, sy),
-                         (x_line + j * block_size, sy + 6 * block_size))
-    surface.blit(label, (x - label.get_width() / 2, sy - block_size - 20))
-
-    # Preview Score
-    label1 = font.render("SCORE", 1, (255, 255, 255))
-    label2 = font.render(score, 1, (255, 255, 255))
-
-    surface.blit(label1, (x - label1.get_width() / 2, sy + 5 * block_size))
-    surface.blit(label2, (x - label2.get_width() / 2, sy + 6 * block_size))
+def draw_right_side(shape, surface):
+    x_next_shape = top_left_x + play_width + 25
+    y_next_shape = top_left_y
+    surface.blit(pg.image.load('paper.png'), (x_next_shape, y_next_shape))
+    shape_pic = pg.image.load(blocks[shapes.index(shape.shape)])
+    surface.blit(shape_pic, (
+        x_next_shape + (200 - shape_pic.get_width()) // 2, y_next_shape + (200 - shape_pic.get_height()) // 2 + 10))
 
 
 def draw_score(surface, score):
@@ -436,60 +421,155 @@ def draw_score(surface, score):
     surface.blit(label2, (sx + 70, sy + 180))
 
 
-def draw_score_board(surface):
+def draw_score_board(surface, score):
     surface_score = pg.Surface((200, 170))
-    surface_score.fill((64, 64, 64))
-
+    surface_score.fill(WHITE)
     black_board = pg.image.load('blackboard.png')
     teacher = pg.image.load('teacher.png')
     surface_score.blit(black_board, (50, 0))
     surface_score.blit(teacher, (0, 70))
-    surface.blit(surface_score, (20, top_left_y))
+    score_text = pg.font.SysFont('comicsans', 30).render(score, True, WHITE)
+    surface_score.blit(score_text, (50 + (150 - score_text.get_width()) // 2, 30))
+    surface.blit(surface_score, (20, top_left_y + 25))
 
 
-def draw_window(surface, ind_del_row=[]):
-    surface.fill((64, 64, 64))
-    draw_score_board(surface)
+def draw_window(surface, score, ind_del_row=[]):
+    # surface.fill(WHITE)
+    pg.draw.rect(surface, WHITE, (0, 0, s_width, s_height // 2))
+    draw_score_board(surface, score)
     label = pg.image.load('tetris.png')
-    surface.blit(label, (top_left_x + play_width / 2 - (label.get_width() / 2), 17))
+    # pause_button = pg.image.load('pause/pause.png')
+    # surface.blit(pause_button, (s_width - pause_button.get_width() - 20, s_height - pause_button.get_height() - 20))
+    screen.blit(label, (top_left_x + play_width / 2 - (label.get_width() / 2), 17))
     for i in range(len(grid)):
         for j in range(len(grid[i])):
-            pg.draw.rect(surface, grid[i][j], (top_left_x + j * 30, top_left_y + i * 30, 30, 30), 0)
+            if grid[i][j] == -1:
+                pg.draw.rect(surface, (96, 96, 96), (top_left_x + j * 30, top_left_y + i * 30, 30, 30), 0)
+            else:
+                image = pg.image.load(blocks_colors[grid[i][j]])
+                image = pg.transform.scale(image, (30, 30))
+                surface.blit(image, (top_left_x + j * 30, top_left_y + i * 30))
     draw_grid(surface, 20, 10)
-    pg.draw.rect(surface, (100, 100, 100), (top_left_x, top_left_y, play_width, play_height), 5)
+    pg.draw.rect(surface, (96, 96, 96), (top_left_x - 2, top_left_y - 2, play_width + 5, play_height + 5), 5)
 
 
-def effect_del_rows(surface, ind_del_rows, effect):
+def effect_del_rows(surface, ind_del_rows, effect, score):
     # draw_info()
     ind_del_rows.sort()
-    surface.fill((64, 64, 64))
-    draw_score_board(surface)
+    surface.fill(WHITE)
+    draw_score_board(surface, score)
     label = pg.image.load('tetris.png')
     surface.blit(label, (top_left_x + play_width / 2 - (label.get_width() / 2), 17))
     for i in range(len(grid)):
         for j in range(len(grid[i])):
-            pg.draw.rect(surface, grid[i][j], (top_left_x + j * 30, top_left_y + i * 30, 30, 30), 0)
+            if grid[i][j] == -1:
+                pg.draw.rect(surface, (96, 96, 96), (top_left_x + j * 30, top_left_y + i * 30, 30, 30), 0)
+            else:
+                image = pg.image.load(blocks_colors[grid[i][j]])
+                image = pg.transform.scale(image, (30, 30))
+                surface.blit(image, (top_left_x + j * 30, top_left_y + i * 30))
 
     surface.blit(pg.transform.scale(effect, (play_width, 30 * len(ind_del_rows))),
                  ((s_width - play_width) // 2, top_left_y + 30 * ind_del_rows[0]))
     draw_grid(surface, 20, 10)
-    pg.draw.rect(surface, (100, 100, 100), (top_left_x, top_left_y, play_width, play_height), 5)
+    pg.draw.rect(surface, (96, 96, 96), (top_left_x - 2, top_left_y - 2, play_width + 5, play_height + 5), 5)
 
 
-def calculate_level_and_fall_speed(score, difficult):
-    if difficult == 1:
+def calculate_level_and_fall_speed(score, init_level):
+    speed_up = int(score[0] / 100)
+    fall_speed = 0
+    level = 0
+    if init_level == 0:
+        level = 0
+        fall_speed = 0.35 - (speed_up * 0.01)
+        if fall_speed <= 0.25:
+            level = 1
+        elif fall_speed <= 0.15:
+            level = 2
+    elif init_level == 1:
         level = 1
-    elif difficult == 2:
-        level = 11
-    elif difficult == 3:
-        level = 21
-    level = int(score[0] / 100) + 1
-    fall_speed = 0.27 - (level * 0.02)
-    return fall_speed
+        fall_speed = 0.25 - (speed_up * 0.01)
+        if fall_speed <= 0.15:
+            level = 2
+    elif init_level == 2:
+        level = 2
+        fall_speed = 0.15 - (speed_up * 0.01)
+    if fall_speed < 0.05:
+        level = 2
+        fall_speed = 0.05
+    return fall_speed, level
 
 
-def play_game(Score):
-    global grid, x, concac
+def pause_game(surface):
+    paused = True
+    while paused:
+        for e in pg.event.get():
+            if e.type == pg.QUIT:
+                pg.quit()
+                quit()
+            if e.type == pg.KEYDOWN:
+                if e.key == pg.K_c:
+                    paused = False
+                if e.key == pg.K_q:
+                    return False
+        surface.fill((255, 255, 255))
+        pg.display.update()
+    return True
+
+
+def pause_screen():
+    global yes_volume
+    text = pg.image.load('pause/text.png')
+    background = pg.image.load('frame.png')
+    surface_pause = pg.Surface((background.get_width(), background.get_height()))
+    surface_pause.fill(WHITE)
+    pause = True
+    while pause:
+        surface_pause.blit(background, (0, 0))
+        surface_pause.blit(text, ((300 - text.get_width()) // 2, 20))
+        for i, button_item in enumerate(button_pause, 0):
+            idx = 1 if button_pause.get(button_item) else 0
+            r = 0 if idx == 0 else 5
+            surface_pause.blit(button_item[idx + 2 if not yes_volume and i == 1 else idx], (button_pause_pos[i][0] - 40 + r, button_pause_pos[i][1] - 40 + r))
+        for event_item in pg.event.get():
+            if event_item.type == pg.QUIT:
+                pg.quit()
+                quit()
+            if event_item.type == pg.KEYDOWN:
+                if event_item.key == pg.K_c:
+                    pause = False
+                if event_item.key == pg.K_q:
+                    return False
+            if event_item.type == pg.MOUSEMOTION:
+                for i, button_item in enumerate(button_pause, 0):
+                    if check_pos_in_circle((button_pause_pos[i][0] + (s_width - 300) // 2,
+                                            button_pause_pos[i][1] + (s_height - 300) // 2, 40), pg.mouse.get_pos()):
+                        button_pause[button_item] = True
+                    else:
+                        button_pause[button_item] = False
+            if event_item.type == pg.MOUSEBUTTONDOWN:
+                for i, button_item in enumerate(button_pause, 0):
+                    if check_pos_in_circle((button_pause_pos[i][0] + (s_width - 300) // 2,
+                                            button_pause_pos[i][1] + (s_height - 300) // 2, 40), pg.mouse.get_pos()):
+                        if i == 0:
+                            for button_item in button_pause:
+                                button_pause[button_item] = False
+                            pause = False
+                        elif i == 1:
+                            yes_volume = not yes_volume
+                            pg.mixer.music.set_volume(1.0 if yes_volume else 0.0)
+                        else:
+                            return 0
+        screen.blit(surface_pause, ((s_width - 300) // 2, (s_height - 300) // 2))
+        pg.display.update()
+
+    for button_item in button_pause:
+        button_pause[button_item] = False
+    return -1
+
+
+def play_game(Score, init_level):
+    global grid, x
     locked_positions = {}
     grid = create_grid(locked_positions)
     change_piece = False
@@ -498,12 +578,17 @@ def play_game(Score):
     next_piece = get_shape()
     clock = pg.time.Clock()
     fall_time = 0
-    fall_speed = 0.27
-
+    fall_speed, level = calculate_level_and_fall_speed(Score, init_level)
+    effect = False
+    pause_button = pg.image.load('pause/pause.png')
+    pause_button_effect = pg.image.load('pause/pause_effect.png')
+    check_out = -1
     while run:
+        pg.draw.rect(screen, WHITE, (s_width - 120, s_height - 120, 120, 120))
         grid = create_grid(locked_positions)
         fall_time += clock.get_rawtime()
         clock.tick()
+        event_list = pg.event.get()
         if fall_time / 1000 >= fall_speed:
             fall_time = 0
             current_piece.y += 1
@@ -513,12 +598,24 @@ def play_game(Score):
                 current_piece.y -= 1
                 change_piece = True
 
-        for event in pg.event.get():
+        for event in event_list:
             if event.type == pg.QUIT:
                 run = False
                 pg.display.quit()
                 quit()
-
+            if event.type == pg.MOUSEMOTION:
+                if check_pos_in_circle((s_width - 80 - 20 + 40, s_height - 80 - 20 + 40, 40), pg.mouse.get_pos()):
+                    effect = True
+                else:
+                    effect = False
+            if event.type == pg.MOUSEBUTTONDOWN:
+                if check_pos_in_circle((s_width - 80 - 20 + 40, s_height - 80 - 20 + 40, 40), pg.mouse.get_pos()):
+                    effect = False
+                    check_out = pause_screen()
+                    if check_out == 0:
+                        return 0
+                else:
+                    pass
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_LEFT:
                     current_piece.x -= 1
@@ -542,8 +639,8 @@ def play_game(Score):
 
         shape_pos = convert_shape_format(current_piece)
 
-        for i in range(len(shape_pos)):
-            x, y = shape_pos[i]
+        for index in range(len(shape_pos)):
+            x, y = shape_pos[index]
             if y > -1:
                 grid[y][x] = current_piece.color
         ind_del_rows = []
@@ -556,53 +653,60 @@ def play_game(Score):
             change_piece = False
 
             ind_del_rows = clear_rows(grid, locked_positions, Score)
-            fall_speed = 0.27  # calculate_level_and_fall_speed(Score)
+            fall_speed, level = calculate_level_and_fall_speed(Score, init_level)
 
         if len(ind_del_rows) > 0:
             t = pg.time.get_ticks()
+            score = str(Score[0])
             while t + 250 >= pg.time.get_ticks():
-                effect_del_rows(screen, ind_del_rows, pg.image.load('e3.png'))
+                effect_del_rows(screen, ind_del_rows, pg.image.load('e1.png'), score)
+                draw_right_side(next_piece, screen)
                 pg.display.update()
             while t + 500 >= pg.time.get_ticks():
-                effect_del_rows(screen, ind_del_rows, pg.image.load('e2.png'))
+                effect_del_rows(screen, ind_del_rows, pg.image.load('e2.png'), score)
+                draw_right_side(next_piece, screen)
                 pg.display.update()
             while t + 750 >= pg.time.get_ticks():
-                effect_del_rows(screen, ind_del_rows, pg.image.load('e3.png'))
+                effect_del_rows(screen, ind_del_rows, pg.image.load('e1.png'), score)
+                draw_right_side(next_piece, screen)
                 pg.display.update()
-
-        draw_window(screen, ind_del_rows)
         score = str(Score[0])
-        draw_right_side(next_piece, screen, score)
+        draw_window(screen, score, ind_del_rows)
+        draw_right_side(next_piece, screen)
+        screen.blit(pause_button_effect if effect else pause_button,
+                    (s_width - pause_button.get_width() - 20 + (5 if effect else 0),
+                     s_height - pause_button.get_height() - 20 + (5 if effect else 0)))
         pg.display.update()
 
         if check_lost(locked_positions):
             run = False
 
     pg.mixer.music.stop()
-    loose_sound = pg.mixer.Sound("gameover.wav")
+    loose_sound = pg.mixer.Sound("game_over.wav")
     loose_sound.play()
     draw_text_middle("You Lost : " + str(Score[0]), 40, (0, 0, 0), screen)
+    # while True:
+    #     for event in pg.event.get():
+    # check pos true
+    # choi lai or return ve man hinh chinh
     pg.display.update()
     pg.time.delay(2000)
     pg.mixer.music.play()
+    return 0
+
 
 if __name__ == '__main__':
-    # main()
-    # global x, move, count, y_text
-    pg.mixer.init()
-    pg.mixer.music.load("nen.wav")
-    pg.mixer.music.set_volume(0.0)
-    pg.mixer.music.play(-1, 0.0)
     Score = [0]
     yes_level = False
-    yes_setting = False
-    volume = True
+    init_level = 0
     move = 0
     count = 0
+    select_level = 0
     label = pg.image.load('tetris_big.png')
     rank_list = [122333, 1232341, 5432344, 5623453, 3654234234]
     button_list = {(pg.image.load('play.png'), pg.image.load('play_effect.png')): False,
-                   (pg.image.load('setting.png'), pg.image.load('setting_effect.png')): False,
+                   (pg.image.load('volume_on.png'), pg.image.load('volume_on_effect.png'),
+                    pg.image.load('volume_off.png'), pg.image.load('volume_off_effect.png')): False,
                    (pg.image.load('level/level.png'), pg.image.load('level/level_effect.png')): False,
                    (pg.image.load('rank/ranking.png'), pg.image.load('rank/ranking_effect.png')): False,
                    (pg.image.load('information.png'), pg.image.load('information_effect.png')): False}
@@ -620,8 +724,10 @@ if __name__ == '__main__':
         event_list = pg.event.get()
         screen.fill(WHITE)
         screen.blit(label, ((s_width - label.get_width()) // 2, 30 + move))
-        # if yes_level and number_screen == 0:
-        selected_option = level_list.update(event_list)
+
+        selected_level = level_list.update(event_list)
+        if selected_level >= 0:
+            init_level = selected_level
         level_list.draw(screen)
         if number_screen == 0:
             for i, button in enumerate(button_list, 0):
@@ -629,8 +735,8 @@ if __name__ == '__main__':
                     continue
                 idx = 1 if button_list.get(button) else 0
                 radius = 75 if i == 0 else 50
-                radius_effect = 0 if idx == 0 else 10
-                screen.blit(button[idx],
+                radius_effect = 0 if idx == 0 else 5
+                screen.blit(button[idx + 2 if not yes_volume and i == 1 else idx],
                             (button_pos[i][0] - radius + radius_effect, button_pos[i][1] - radius + radius_effect))
 
         elif number_screen == 1:
@@ -638,8 +744,8 @@ if __name__ == '__main__':
         elif number_screen == 2:
             draw_rank(screen, rank_list)
         elif number_screen == 3:
-            play_game(Score)
-
+            number_screen = play_game(Score, init_level)
+        # pause_screen(screen, event_list)
         for event in event_list:
             if event.type == pg.QUIT:
                 pg.display.quit()
@@ -659,16 +765,9 @@ if __name__ == '__main__':
                     number_screen = 2
                 elif check_pos_in_circle(information_button_pos, pg.mouse.get_pos()) and number_screen == 0:
                     number_screen = 1
-                elif check_pos_in_circle(level_button_pos, pg.mouse.get_pos()):
-                    if number_screen == 0:
-                        yes_level = True
-                    else:
-                        yes_level = not yes_level
                 elif check_pos_in_circle(setting_button_pos, pg.mouse.get_pos()):
-                    if number_screen == 0:
-                        yes_setting = True
-                    else:
-                        yes_setting = not yes_setting
+                    yes_volume = not yes_volume
+                    pg.mixer.music.set_volume(1.0 if yes_volume else 0.0)
                 else:
                     number_screen = 0
 
