@@ -442,9 +442,9 @@ def effect_del_rows(surface, ind_del_rows, effect, score):
                 image = pg.image.load(blocks_colors[grid[i][j]])
                 image = pg.transform.scale(image, (30, 30))
                 surface.blit(image, (top_left_x + j * 30, top_left_y + i * 30))
-
-    surface.blit(pg.transform.scale(effect, (play_width, 30 * len(ind_del_rows))),
-                 ((s_width - play_width) // 2, top_left_y + 30 * ind_del_rows[0]))
+    for i in ind_del_rows:
+        surface.blit(pg.transform.scale(effect, (play_width, 30)),
+                     ((s_width - play_width) // 2, top_left_y + 30 * i))
     draw_grid(surface, 20, 10)
     pg.draw.rect(surface, (96, 96, 96), (top_left_x - 2, top_left_y - 2, play_width + 5, play_height + 5), 5)
 
