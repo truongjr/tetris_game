@@ -1,5 +1,3 @@
-import sys
-
 import pygame as pg
 import random
 
@@ -363,14 +361,6 @@ def get_shape():
     return Piece(5, 0, random.choice(shapes))
 
 
-def draw_text_middle(text, size, color, surface):
-    font = pg.font.SysFont('comicsans', size, bold=True)
-    label = font.render(text, 1, color)
-
-    surface.blit(label, (
-        top_left_x + play_width / 2 - (label.get_width() / 2), top_left_y + play_height / 2 - label.get_height() / 2))
-
-
 def draw_grid(surface, row, col):
     sx = top_left_x
     sy = top_left_y
@@ -413,16 +403,6 @@ def draw_right_side(shape, surface):
     shape_pic = pg.image.load(blocks[shapes.index(shape.shape)])
     surface.blit(shape_pic, (
         x_next_shape + (200 - shape_pic.get_width()) // 2, y_next_shape + (200 - shape_pic.get_height()) // 2 + 10))
-
-
-def draw_score(surface, score):
-    sx = top_left_x + play_width + 50
-    sy = top_left_y + play_height / 2 - 100
-    font = pg.font.SysFont('comicsans', 30)
-    label1 = font.render("SCORE", 1, (255, 255, 255))
-    label2 = font.render(str(score[0]), 1, (255, 255, 255))
-    surface.blit(label1, (sx + 35, sy + 150))
-    surface.blit(label2, (sx + 70, sy + 180))
 
 
 def draw_score_board(surface, score):
