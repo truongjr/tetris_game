@@ -176,15 +176,14 @@ class OptionBox:
         self.effect = False
 
     def draw(self, surface):
-        idx = 1 if self.effect else 0
-        radius_effect = 0 if idx == 0 else 10
-        surface.blit(self.choose[idx], (self.x + radius_effect, self.y + radius_effect))
+        index = 1 if self.effect else 0
+        re = 0 if index == 0 else 10
+        surface.blit(self.choose[index], (self.x + re, self.y + re))
         if self.draw_menu:
             pg.draw.rect(surface, WHITE,
                          (self.x, self.y + self.choose[0].get_height(), 180 + len(self.option_list) * 80, 160))
             for i, value in enumerate(self.option_list, 0):
                 surface.blit(value, (self.pos_option_list[i]))
-                # print(self.x + self.space + i * 80 + self.space * i, self.y + 120)
 
     def update(self, list_event):
         mouse_pos = pg.mouse.get_pos()
@@ -212,7 +211,6 @@ class OptionBox:
                     self.selected = self.active_option
                     self.draw_menu = False
                     self.choose[0] = self.level_list[self.active_option]
-                    # print(self.active_option)
                     return self.active_option
                 if self.menu_active:
                     self.draw_menu = not self.draw_menu
@@ -240,8 +238,6 @@ def draw_rank(surface, score_list):
         surface_list.blit(rank_item, (0, h_format * i + 20 * i))
         surface_list.blit(score, (
             rank_item.get_width() + 20, rank_item.get_height() // 2 + h_format * i - score.get_height() // 2 + 20 * i))
-        # print(rank_item.get_width() + 10 + score.get_width())
-        # print(rank)
 
     surface.blit(surface_list, ((surface.get_width() - surface_list.get_width()) // 2, 200))
 
@@ -249,7 +245,6 @@ def draw_rank(surface, score_list):
 def draw_information_game(surface):
     pg.draw.rect(surface, WHITE, (0, 0, s_width, s_height))
     ptit_logo = pg.image.load('picture_start/ptitlogo.png')
-    # surface.blit(ptit_logo, (10, 10))
     name_vi = pg.font.Font('font/pridib.ttf', 25).render('Học viện Công Nghệ Bưu Chính Viễn Thông'.upper(), True, BLACK)
     name_en = pg.font.Font('font/pridil.ttf', 20).render('Posts and Telecommunications Institute of Technology', True, RED)
     name_project = pg.font.Font('font/pridil.ttf', 30).render('Đồ án :', True, BLACK)
@@ -260,7 +255,6 @@ def draw_information_game(surface):
     name_info_student1 = pg.font.Font('font/pridil.ttf', 20).render('Nguyễn Hữu Trưởng - N19DCCN221', True, BLACK)
     name_info_student2 = pg.font.Font('font/pridil.ttf', 20).render('Nguyễn Nhật Thanh - N19DCCN190', True, BLACK)
     day_info = pg.font.Font('font/pridil.ttf', 20).render('TP Hồ Chí Minh Ngày 24 Tháng 12 Năm 2021', True, BLACK)
-    # surface.blit(font, (10 + ptit_logo.get_width(), 10 + ptit_logo.get_height() // 2))
     surface_ptit = pg.Surface((ptit_logo.get_width() + name_vi.get_width() + 20, ptit_logo.get_height()))
     surface_infor = pg.Surface((max(name_game.get_width() + 20,
                                     name_teacher.get_width() + name_info_teacher.get_width() + 20),
@@ -421,8 +415,6 @@ def draw_window(surface, score):
     pg.draw.rect(surface, WHITE, (0, 0, s_width, s_height // 2))
     draw_score_board(surface, score)
     title = pg.image.load('picture_start/tetris.png')
-    # pause_button = pg.image.load('pause/pause.png')
-    # surface.blit(pause_button, (s_width - pause_button.get_width() - 20, s_height - pause_button.get_height() - 20))
     screen.blit(title, (top_left_x + play_width / 2 - (title.get_width() / 2), 17))
     for i in range(len(grid)):
         for j in range(len(grid[i])):
@@ -437,7 +429,6 @@ def draw_window(surface, score):
 
 
 def effect_del_rows(surface, ind_del_rows, effect, score):
-    # draw_info()
     ind_del_rows.sort()
     pg.draw.rect(surface, WHITE, (0, 0, s_width, s_height // 2))
     draw_score_board(surface, score)
@@ -607,8 +598,6 @@ def play_game(level_start):
             fall_time = 0
             current_piece.y += 1
             if not (valid_space(current_piece, grid)) and current_piece.y > 0:
-                # fall_sound = pg.mixer.Sound("fall.wav")
-                # fall_sound.play()
                 current_piece.y -= 1
                 change_piece = True
 
