@@ -43,3 +43,6 @@ MacBook-Pro:tetris_game-main user$ python3 main.py
 ```
 
 Sau khi gõ lệnh xong thì ta ấn phím Enter, lúc đó chương trình sẽ chạy và ta có được màn hình game TETRIS.
+
+## Lưu ý
+- Chuột chỉ nhận chuột trái, không nhận chuột phải hay chuột giữa
