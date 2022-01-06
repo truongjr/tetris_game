@@ -220,6 +220,7 @@ class OptionBox:
 
 
 def draw_rank(surface, score_list):
+    score_list.sort(reverse = True)
     pg.draw.rect(surface, WHITE, (0, 0, s_width, s_height))
     rank = pg.image.load('rank/ranking.png')
     rank_title = pg.font.Font('font/pridib.ttf', 50).render('Bảng xếp hạng', True, BLACK)
@@ -680,7 +681,7 @@ def play_game(level_start):
         if check_lost(locked_positions):
             run = False
     rank_list.sort(reverse=True)
-    rank_list[0] = score if score > rank_list[0] else rank_list[0]
+    rank_list[-1] = score if score > rank_list[-1] else rank_list[-1]
     str_rank_list = " ".join([str(item) for item in rank_list])
     with open('score_txt', 'w+') as f:
         f.write(str_rank_list)
