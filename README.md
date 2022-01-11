@@ -13,7 +13,7 @@ Sau khi đã cài đặt và kiểm tra python đã được cài vào máy hay 
 
 ## Tải pygame về máy
 
-Đây cũng chính là phần quan trọng nhất của chương trình, nên ta cần phải tải python về máy tương ứng với hệ điều hành theo các hướng dẫn sau:
+Đây cũng chính là phần quan trọng nhất của chương trình, nên ta cần phải tải pygame về máy tương ứng với hệ điều hành theo các hướng dẫn sau:
 
 - [Hệ điều hành Windows](https://www.geeksforgeeks.org/how-to-install-pygame-in-windows/)
 
@@ -43,6 +43,3 @@ MacBook-Pro:tetris_game-main user$ python3 main.py
 ```
 
 Sau khi gõ lệnh xong thì ta ấn phím Enter, lúc đó chương trình sẽ chạy và ta có được màn hình game TETRIS.
-
-## Lưu ý
-- Chuột chỉ nhận chuột trái, không nhận chuột phải hay chuột giữa
