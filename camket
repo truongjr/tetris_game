@@ -9,10 +9,4 @@
 8.Xử lí kết thúc game (sau thua sẽ tính tổng điểm và xuất bảng thông báo lên màn hình gồm tổng điểm đạt được và kỉ lục và nút chơi lại). 
 9.Xử lí âm thanh trong game.
 10.Xử lí xếp hạng (nếu như đạt kỉ lục mới sẽ được lưu lại) sẽ show ra "Top 5" ở giao diện đầu game .
-PHÂN CÔNG CÔNG VIỆC ĐỒ ÁN MÔN LẬP TRÌNH VỚI PYTHON
-Nguyễn Hữu Trưởng – N19DCCN221 – D19CQCN02-N:
--	Giao diện chính của game
--	Liên kết giao diện và logic bên trong game
-Nguyễn Nhật Thanh – N19DCCN190 – D19CQCN02-N:
--	Xử lý logic bên trong game
--	Xử lý âm thanh và kiểm thử game
+
